@@ -1,0 +1,32 @@
+PROJECT_NAME = "webapp"
+
+# RDS Variables definitions
+RDS_ALLOCATED_STORAGE   = "20"
+RDS_ENGINE              = "mysql"
+DB_INSTANCE_CLASS       = "db.t2.micro"
+ENGINE_VERSION          = "5.7.17"
+BACKUP_RETENTION_PERIOD = "7"
+PUBLICLY_ACCESSIBLE     = true
+RDS_USERNAME            = "test"
+RDS_PASSWORD            = "test123#$"
+RDS_CIDR                = "0.0.0.0/0"
+
+USER_DATA_FOR_APPSERVER = "./demo_code/app.sh"
+USER_DATA_FOR_WEBSERVER = "./demo_code/web.sh"
+
+APP_SERVER_INSTANCE_TYPE = "t2.micro"
+WEB_SERVER_INSTANCE_TYPE = "t2.micro"
+
+# VPC Variables definitions
+VPC_CIDR_BLOCK = "10.0.0.0/16"
+
+SSH_CIDR_APP_SERVER = "0.0.0.0/0"
+SSH_CIDR_WEB_SERVER = "0.0.0.0/0"
+
+# Public
+VPC_PUBLIC_SUBNET1_CIDR_BLOCK = "10.0.1.0/24"
+VPC_PUBLIC_SUBNET2_CIDR_BLOCK = "10.0.2.0/24"
+
+# Private
+VPC_PRIVATE_SUBNET1_CIDR_BLOCK = "10.0.3.0/24"
+VPC_PRIVATE_SUBNET2_CIDR_BLOCK = "10.0.4.0/24"
