@@ -24,7 +24,7 @@ resource "aws_lb_target_group" "ltg-front-end" {
 }
 
 resource "aws_security_group" "sg-webservers-alb" {
-  name        = "${var.PROJECT_NAME}-sg-appservers-ALB"
+  name        = "${var.PROJECT_NAME}-sg-webservers-ALB"
   description = "Created by Dougdb"
   vpc_id      = aws_vpc.main.id
   ingress {
