@@ -24,3 +24,9 @@
   * aws_route_table_association.to_private_subnet_2
   * aws_route_table_association.to_public_subnet_1
   * aws_route_table_association.to_public_subnet_1
+
+### Terraform Modules
+
+* Multiple envs can be created - Dev, Stage, PreProd and Prod [https://registry.terraform.io/]
+
+* 
