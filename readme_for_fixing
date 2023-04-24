@@ -1,0 +1,440 @@
+### Ultimate AWS Certified Developer Associate 2020
+---
+
+<ol>
+    <li>
+        Each region has many availability zones, 
+        usually 3, min 2 and max 6
+        e.g - <strong><em>ap-southeast-2a | ap-southeast-2b</em></strong> on link
+        [AWS Global Infrastructure](https://aws.amazon.com/about-aws/global-infrastructure/regions_az/?p=ngi&loc=2).
+        <br />
+        [AWS Region Table](https://aws.amazon.com/about-aws/global-infrastructure/regional-product-services/?p=ngi&loc=4).
+    </li>
+
+</ol>
+
+
+#### Terraform Commands
+EC2 Key Pairs Instance
+```
+$ ssh-keygen -f {{FILE_NAME}}.pem
+$ sudo chmod 600 /path/{{FILE_NAME}}.pem
+$ sudo chmod 755 /PEM_PATH
+$ ssh -i {{PEM_FILE}} ec2@{{PUBLIC_IP}}
+$ ssh -i {{PEM_FILE}} ubuntu@{{PUBLIC_IP}}
+$ ifconfig -a
+```
+
+#### IAM (Identity and Access Management)
+ * Users
+ * Groups
+ * Roles  
+##### Root Account (Never be used or shared)
+
+#### AWS CLI
+```
+$ aws configure
+$ AWS Access Key ID [None]: (paste|type) your access key here
+$ AWS Secret Access Key [None]: (paste|type) your access key here
+$ Default region name [None]: (paste|type) your default region here
+$ Default out format [None]: 
+$ ls -la ~/.aws
+```
+
+
+#### EC2
+ * Renting virtual machines (EC2)
+ * Storing data on virtual drives (EBS)
+ * Distributing load across machines (ELB)
+ * Scaling the services using an auto-scaling group (ASG)
+ * Pricing is per hour
+   * Region in
+   * Instance Type
+   * Launch Instance
+   * OS Type
+   * R/C/P/G/H/X/I/F/Z/CR are spec in RAM, CPU, I/O, Network, GPU
+   * M instances types are balanced (no good fo GPUs)
+   * T2/T3 types are 'burstable' (free) can have a spike and a CPU can keep very good
+   * (Amazon EC2 Instances Type) [https://aws.amazon.com/ec2/instance-types]
+  
+#### EC2 Instance Launch Type
+ * Reserved 
+   * Reserved minimum 1year 
+   * Convertible Reserved
+   * Scheduled Reserved Instances
+ * Spot Instances
+   * short workloads for cheap but can loose instances
+ * Dedicated Instances
+ * Dedicated Hosts
+
+#### Security Groups
+
+* Are the fundamental of network security in AWS
+* They control how traffic is allowed into or out in ec2 vm 
+* Acting as a "firewall" on EC2 instances
+* Actually
+    * Access to Ports
+    * Authorize IP ranges - IPv4 and IPv6
+    * Control of inbound network (from other to the instance)
+    * Control of outbound network (from the instance to other)
+    * Can be attached to multiple instances
+    * Locked down to a region /VPC combination
+    * Switched new region? Must have new SG or another VPC
+    * It's good to keep one ***separate SG group for SSH access***
+    * Application it's not accessible (time out), then we have a SG issue
+    * Default behavior to SG is Deny all traffic inbound and allow all traffic outbound
+
+#### Private vs Public IP (IPv4)
+* Public IP
+  * Means the machine can be identified over internet (www)
+  * Must be unique across the whole web (not two machines have the same IP)
+  * Can be geo-located easily
+* Private IP
+  * Means the machine can only be identified on a private network only
+  * The IP must be unique across the private net
+  * Two different companies networks can have the same IPs
+  * Machines connect over WWW using a NAT + INTERNET GATEWAY (a proxy)
+* Elastic IPs
+  * When you stop and then start an EC2 instance, it can change its public IP
+  * When you need to have a fixed public IP for your instance, you need and Elastic IP  
+  * Try avoid use Elastic IP  
+
+#### Scalability
+  * Vertical
+    * Means increasing the size of the instance
+      * App runs over t2.micro => vertically means running over t2.large
+      * Commonly in distributed systems, such a DB e.g RDS, ElastiCache
+  * Horizontal
+    * Means increasing the number of instances / systems for your app
+      * Commonly in web apps
+      * Easily to scale with EC2
+  * High Availability
+    * Means usually goes hand in hand with horizontal scaling
+    * Vertical increasing instance size
+    * Horizontal Increase number of instances (Auto Scale Group|Load Balance)
+    * Running multiple instances of app across multi AZ
+
+#### Load Balancing
+  * Are servers that forward internet traffic to multiple EC2 instances
+  * Why Use LBs
+    * Spread load across multiple downstream instances
+    * Expose a single point of access through DNS to your app
+    * Seamlessly handle failures of downstream instances
+    * Do regular health checks to your instances
+    * Provide SSL termination HTTPS to your websites
+    * Enforce stickiness with cookies
+    * High availability across zones
+    * Separate public traffic from private traffic
+    * EC2 ELB Load Balance is a auto managed Load Balancer
+  * Health Checks
+    * Are crucial for Load Balancers, overall it is recommended to use the newer / v2 generation of load balancers
+    * We can setup internal (private) or external (public) ELBs
+  * Classic Load Balancers
+    * Support TCP (Layer 4), HTTP & HTTPS (Layer 7)
+    * Health checks are TCP or HTTP based
+    * Fixed hostname xxx.region.elb.amazonaws.com
+  * Application Load Balancer (v2)
+    * Application load balancers is Layer 7 (HTTP)
+    * Load balancing to multiple HTTP applications across machines
+    * Load balancing to multiple applications on the same machine (ex. containers)
+    * Support HTTP/2 and WebSocket
+    * Support redirects (from HTTP to HTTPS)
+    * Routing tables to different target groups
+      1. Routing based on path in URL (foo.com/***users*** & foo.com/***posts***)
+    * Great fit with Micro Services * Container-based app e.g Docker & Amazon ECS
+  * Network Load Balance (v2)
+    * Forward TCP & UDP traffic to your instances
+    * Handle millions of requests per seconds
+    * Less latency ~ 100ms (vs 400ms for ALB)
+    * NLB has <u><b>one static IP per AZ</b></u>, and supports assigning Elastic IP
+    * NLB are used for extreme performance, TCP or UDP traffic
+    * Load Balancer Stickiness means that the same client is always redirected to the same instance behind a load balancer, works for Classic LB a Application LB
+  * Cross Zone Load
+    * Each lb instance distributes evenly across all registered instances in all AZ, otherwise each load balancer node distributes requests evenly across the registered instances in its AZ only
+  * SSL - Server Name Indication
+    * Solves the problem of loading **multiple SSL certificates onto web server**
+
+#### ELB - Connection Draining
+ * CLB: Connection Draining
+ * Target Group: Deregistration Delay (ALB & NLB)
+
+#### Auto Scaling Group
+ * The goal of an ASG is to:
+   * Scale out (add EC2 instances) to match an increased load
+   * Scale in (remove EC2 instances) to match a decreased load
+   * Ensure we have a minimum and maximum number of machines running
+   * Automatically Register new instances to a load balancer
+     * Configuration needs:
+       1. *AMI + Instance Type&*
+       2. *EC2 User Data*
+       3. *EBS Volumes (SSD_)*
+       4. *Security Groups*
+       5. *SSH Key Pair*
+    * Capacity
+      1. Min/Max/Initial Capacity
+    * Networks + Subnets Information
+    * Load Balancer Information
+    * Scale Policies
+  * Auto Scaling Alarms
+    * Scale base on CloudWatch alarms
+    * Scale New Rules
+      * Now is possible to define "better" auto scaling rules that are directly managed by EC2
+      * Target Average CPU Usage
+      * Number of Requests on the ELB per instance
+      * Average Network In/Out
+    * Custom Metrics
+      * Custom metrics e.g based on connected users
+    * Scaling Policies
+      * Target Tracking Scaling
+        1. Most simple and easy to set-up, e.g I want the average ASG CPU to stay at around 40%
+      * Simple / Step Scaling
+        1. When Cloud watch alarm is triggered e.g CPU > 70%, then add 2 units, Or < 30% then remove 1
+      * Anticipate a scaling based on known usage patterns, e.g increase the min capacity to 10 at 5 p.m on fridays
+      * Scaling Cool downs ensure that your ASG group doesn't launch or terminate additional instances before the previous scaling activity takes effect
+  
+#### EBS Elastic Block Storage Volumes
+ * Can be attached only one instance at a time
+ * An EC2 instance loses its root volume (main drive) when it is manually terminated
+ * Unexpected terminations might happen from time to time
+ * Sometimes, we need stop your instances
+ * EBS come in 4 types
+   * GP2 (SSD): General purpose SS volume
+   * IO1 (SSD): Highest-performance SSD volume for mission-critical (MonoDB, Cassandra, SQL etc)
+   * ST1 (HDD): Low cost HDD frequently access, throughput intensive workloads
+   * SC1 (HDD): Lowest cost HDD volume less frequently access
+ * Commands over EC2 Instance with **aws_volume_attachment**
+  ```
+  [ec2user ~]$ lsblk
+  [ec2user ~]$ sudo file -s /dev/xvdb
+  [ec2user ~]$ sudi mkfs -t ext4 /dev/xvdb
+  [ec2user ~]$ sudo mkdir /data
+  [ec2user ~]$ sudo mount /dev/xvdb /data
+  [ec2user ~]$ lsblk
+  ```
+
+#### EFS Elastic File System
+ * Mounting 100s of instances across AZ
+ * Managed EFS (network file system) that can be mounted on many EC2
+ * Highly available, scalable, expensive (3x gp2), pay per use
+
+#### RDS Relation Database Service
+ * It's a managed DB service for DB use SQL as query language
+ * It allow you to create databases in the cloud that are managed by AWS
+   * Postgres
+   * MySQL
+   * MariaDB
+   * Oracle
+   * Microsoft SQL Server
+   * Aurora (AWS Proprietary DB Engine)
+   * Advantages over using RDS versus EC2
+     * RDS is managed service
+     * Automated provisioning with OS patching
+     * Read replicas to improved read performance
+     * Multi AZ setup for Disaster Recovery
+     * Scaling capability both Vertical and Horizontal
+     * Storage backed by EBS (gp2 or io1)
+     * **You can't SSH into your instances**
+   * RDS Read Replicas for read Scalability
+     * Within AZ, Cross AZ and Cross Region in up to N instances
+     * This replication is ASYNC so reads eventually consistent
+     * AWS Aurora is not open sourced
+     * AWS Aurora is "AWS cloud optimized" and claims 5x perform improvement over MySQL on RDS and over 3x performance of Postgres on RDS
+     * Aurora storage automatically grows, have a Master a plenty Read replicas
+     * Aurora Serverless to automated database instantiation with auto-scaling based on actual usage, good for infrequent, intermittent or unpredictable workloads
+  
+#### ElastiCache 
+ * Same way RDS is to get managed RDB
+ * Elasticache is to get managed by Redis or Memcached
+ * Caches are in-memory databases with really high performance, low latency
+ * ElastiCache Strategies
+   * (Considerations) [https://aws.amazon.com/caching/implementation-considerations]
+   * Is it safe to cache data? In general yes but data can be out of date
+   * Pattern: data caching slowly, few keys are frequently needed
+   * Anti Pattern: data caching rapidly, all large key space frequently needed
+   * Data structured is necessary? Key caching or cache aggregate results
+   * Cache hit means -> My App find the key info
+   * Cache miss does not have the data, and we need find the data in somewhere, after found we need write the data in cache
+
+#### Route 53
+ * Is a managed DNS (Domain Name System)
+ * DNS is a collection of rules and records which helps clients understand how to reach a server through its domain name
+ * Has advanced features such as
+   * Load Balancing (through DNS - also called client load balancing)
+   * Health checks, but limited
+
+#### VPC
+ * Private network cloud to deploy your resources (is a regional resource), if you have two AWS regions, they will have two different VPCs, VPCs are grouped by Subnets, that allows you partition your network in VPC, subnets are defined at the availability zone level
+   * AZ a - Multiple Subnets, 
+    1. public subnet (www), is accessible from internet
+    2. private subnets, is not accessible from internet's
+ * To define access to internet and between subnets we use Route Tables, this means how we network data flows
+ * VPC CIDR Range - 10.0.0.0/16 - | AZ 1 | AZ 2 | both zones can be have private and public subnets between *CIDR Range*
+  * Internet Gateway & NAT Gateways
+    * Inside your Subnets you have a EC2 instance for example, to enable this instance to access (www) you must use a internet gateway, it will help the instance to connect into the internet, subnet have a route to igw, 
+    * When we have an instance inside a private subnet we can access the internet also, but for this we need use NAT Gateways (AWS-managed) & NAT Instances (self-managed) allow your instances in your *Private Subnets* to access the internet while remaining private, nat gateway will created inside public subnet and it will be accessed from the private subnet creating a route between them
+  * Network ACLs & Security Groups
+    * VPC -> Subnet -> Public subnet -> EC2 instance -> Nat ACL which is a ***firewall ALLOW | DENY rules*** to control traffic in subnets, are attached at the subnet level, this rules only include IP addresses, this means all the traffic from this IP is allowed ou denied
+    * VPC -> Subnet -> Public subnet -> EC2/ENI Instance -> Security group is a ***firewall ALLOW*** traffic, can reference IPs a others security groups
+    <table>
+      <tr>
+        <th colspan="2"><center>Network ACLs vs Security Groups</center></th>
+      </tr>
+      <tr>
+        <th>Security Group</th>
+        <th>Network ACLs</th>
+      </tr>
+      <tr>
+        <td>Operates at the instance level</td>
+        <td>Operates at the subnet level</td>
+      </tr>
+      <tr>
+        <td>Support allow rules only</td>
+        <td>Support allow and deny rules</td>
+      </tr>
+      <tr>
+        <td>Is stateful: returns traffic is automatically allowed, regardless of any rules
+        </td>
+        <td>Is stateless: returns traffic must be explicitly allowed rules</td>
+      </tr>
+      <tr>
+        <td>We evaluate all rules before deciding whether to allow traffic</td>
+        <td>We process rules in number order when deciding whether to allow traffic</td>
+      </tr>
+      <tr>
+        <td>Applies to an instance only if someone specifies the such sg when launching the instance, or associates the security group with the instance later on</td>
+        <td>Automatically applies to all instances in the subnets it's associated with (therefore, you don't have on rely on users to specify the sg</td>
+      </tr>
+    </table>
+  * VPC Flow Logs
+    * Capture all information about IP traffic going into your interfaces, such as VPC, Subnet and ENI flow logs
+  * VPC Peering
+    * Connect two vpc, private using AWS's network, making them as if they were in the same network, assure that not overlapping CIDR, there is not transitive communication among them
+  * VPC Endpoints
+    * Allow you to connect to AWS Service using a private network instead of the public www, vpc endpoint to connect DynamoDB outside
+  * Site to Site VPN & Direct Connect
+    * Site to Site VPN to connect on premises data centers VPN to AWS, connection will be automatically encrypted over public internet
+    * Direct Connect (DX) achieve the same purpose connection On Premise DC -> VPC but in here we have a physical private connection not over the public internet is going to be secure and fast
+  * Public subnet for web servers and app server
+  * Private subnet for database servers (RDS)
+  * NAT Gateway for private instances to access internet
+  * Internet Gateway for public instances to access internet
+  * Elastic IP attached to NAT gateway
+  * Route table for Public and Private subnets
+  * Route table associations
+
+#### AWS S3
+ * S3 is one of the main building blocks of AWS, it is advertised as "infinitely scaling" storage
+ * They allow store objects (files) in "buckets" (directories), each bucket MUST have globally unique name, 
+ * Are defined ate the region level, 
+   * have a name convention, 
+   * no uppercase, 
+   * no underscore, 
+   * 3-63 chars
+   * not an IP
+   * must start with lowercase letter or number
+ * Objects (files) have a key, key is the full path, e.g 1 s3://my-bucket/my_file.txt, the key is my_file.txt, eg s3://my-bucket/my_folder/another_folder/my_file.txt the key is my_folder/another_folder/my_file.txt, prefix + object name can defined the key
+ * Max object Size is 5TB (5000GB), greater than must be multi-parted
+ * Version ID if versioning is enabled
+ * There are 4 methods of encrypting objects in s3
+   * SSE-S3, SSE-KMS, SSE-C, Client Side Encryption -> Upload Objects Encryption actions
+   * Default Encryption None, AES-256, AWS-KMS
+   * S3 Security based on Policies for IAM Principal see [https://awspolicygen.s3.amazonaws.com/policygen.html]
+ * S3 Websites can host static websites and have them accessible on the www
+ * IAM Policy Simulator [https://policysim.aws.amazon.com/home]
+ * AWS Dry Runs to make sure we have permissions, needs iam policy to run all the bellow commands
+  ```
+  $ aws ec2 run-instances --dry-run --image-id {{image_id_here}} --instance-type t2.nano
+  $ aws sts decode-authorization-message --encoded-message {{token_msg_here}}
+  ```
+
+#### S3 Storage Classes
+
+ * Amazon S3 Standard - General Purpose
+ * Amazon S3 Standard-Infrequent Access (IA)
+ * Amazon S3 One Zone-Infrequent Access
+ * Amazon S3 Intelligent Tiering
+ * Amazon Glacier
+ * Amazon Glacier Deep Archive
+
+#### AWS ECS Essentials
+
+* ECS is used to run Docker containers and has 3 flavors (ECS Classic|Fargate|EKS)
+  * Clusters 
+      a. Are logical grouping of EC2 Instances
+      b. EC2 instances run the ECS agent (Docker container)
+      c. ECS agents registers the instance to the ECS cluster
+      d. EC2 instances run a special AMI, made specifically for ECS
+   * 
+   * Services
+   * Tasks
+   * Tasks Definition
+ * ECR
+   * Store images to be used over containers
+  ```
+  $ aws ecr get-login-password --region sa-east-1 | docker login --username AWS --password-stdin 123456.dkr.ecr.eu-west-I.amazonaws.com
+  ```
+ * Fargate
+ * EKS
+ * ECS Classic 
+   * EC2 instances must be created and managed
+   * Must configure the file /etc/ecs/ecs.config with the cluster name
+   * EC2 instance must run an ECS agent
+   * EC2 instances can run multiple containers on the same type, must specify only containers
+ * 
+
+#### AWS Elastic Beanstalk
+
+* Elastic Beanstalk is a platform as a Service
+  * It uses components like EC2, ASG, ELB, RDS, etc...
+  * Is a free service, but underlying instances have a cost
+* Allows us to deploy apps easily in scalable and safe way
+* Managed Service with managed OS and Instances
+* Have 3 components
+  * Application
+  * Application Version: each deployment gets assigned a version
+  * Environment name (dev|test|prod) promotion app version to next envs
+* Elastic Beanstalk Deployment Modes
+  * Single instance -> Dev Mod
+  * High Availability with Load Balancer -> Prod Mod
+  * .ebextensions/ dir in the root of source to AEB extension, yaml or json format .config file
+  * To run as Single Docker Container with Dockerfile and does not use ECS
+  * To run as Multi Docker Container helps with multiple container per EC2 instance uses ECS behind the scenes
+
+#### AWS Monitoring & Audit
+
+* AWS Cloudwatch
+  * Metrics - Collect and track key metrics
+    a. provides metrics for every services in AWS
+    b. Metric can be represented by variable to monitor (CPUUtilization, NetworkIn...)
+  * Can Create a Auto Scale Group Metrics
+  * Logs - Collect, monitor, analyze and store log files
+    * Apps can send logs to Cloudwatch using the SDK
+    * Collect log from
+      * Elastic Beanstalk
+      * ECS
+      * AWS Lambda
+      * VPC Flow Logs
+      * API Gateway
+      * CloudTrail based on filter
+      * CloudWatch log agents for example on EC2 Machines
+      * Route53
+      * Can go to S3 to archival
+      * Stream to ElasticSearch
+      * By default no logs for EC2 machines will go to CloudWatch, we need create a starter agent to EC2 push the log files
+  * Events - Send notifications when certain events happen in your AWS
+  * Alarms - React in real-time to metrics / events
+    * Are used to trigger notifications for any metric
+    * Can go to ASG, EC2 actions, SNS Notifications
+    * Various options e.g %, max, min etc
+* AWS X-Ray
+  * New Service and no much popular
+    * Troubleshooting apps performance and errors
+    * Distributed tracing of Microservices
+    * Needs SDK to instrumentation your app, and start X-Ray Daemon process by data scripting on the EC2 instance
+  
+#### Lambda
+
+* Means no servers
+* FaaS Function as Service
+* Servless in AWS - Lambda, DynamoDB, AWS Cognito, API Gateway, AWS S3, SNS & SQS Kinesis Data Firehouse, Serverless, Step Functions, Fargate
+* Lambda Logging - executions are store in aws cloudwatch, must sure your aws lambda has an execution role
